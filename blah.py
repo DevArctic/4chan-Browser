@@ -7,30 +7,46 @@ boardData = r.json()
 
 app= QApplication([])
 
-class Window(QWidget):
+BUTTON_WIDTH = 100
+BUTTON_HEIGHT = 50
+numBoards = len(boardData["boards"])
+
+class BoardWindow(QWidget):
+
+	def setButtons(self, buttons):
+		self.buttons = buttons
 
 	def resizeEvent(self, e):
-		positionBoardButtons()
+		positionBoardButtons(self.buttons, self)
 
-window = Window()
+def buttonClick(stuff):
+	print (stuff.text())	
 
-numBoards = len(boardData["boards"])
-bsizew = 100
-bsizeh = 50
-boardButtons = []
+def startBoardWindow():
 
-def createBoardButtons():
+	window = BoardWindow()
+	boardStringList = []
 	for x in range(numBoards):
-		boardButtons.append(QPushButton(boardData["boards"][x]["board"]))
-	for each in boardButtons:
-		each.resize(bsizew,bsizeh)
-		each.setParent(window)
+		boardStringList.append(boardData["boards"][x]["board"])
+	window.setButtons(createBoardButtons(boardStringList, window))
+	positionBoardButtons(window.buttons, window)
+	return window
 
-def positionBoardButtons():
+def createBoardButtons(boardStringList, window):
+	boardButtons = []
+	for each in boardStringList:
+		boardButtons.append(QPushButton(each))
+	for each in boardButtons:
+		each.resize(BUTTON_WIDTH,BUTTON_HEIGHT)
+		each.setParent(window)
+		each.clicked.connect(lambda state, each=each: buttonClick(each))
+	return boardButtons
+
+def positionBoardButtons(buttons, window):
 	wWidth = window.frameGeometry().width()
 	print (wWidth)
-	col = wWidth // bsizew
-	paddingTotal = wWidth % bsizew
+	col = wWidth // BUTTON_WIDTH
+	paddingTotal = wWidth % BUTTON_WIDTH
 	paddingLeft = paddingTotal // 2
 	paddingTop = 25
 	if (numBoards % col == 0):
@@ -40,14 +56,12 @@ def positionBoardButtons():
 	posList = []
 	for y in range(rows):
 		for x in range(col):
-			posList.append((((bsizew * x) + paddingLeft),((bsizeh * y) + paddingTop)))
+			posList.append((((BUTTON_WIDTH * x) + paddingLeft),((BUTTON_HEIGHT * y) + paddingTop)))
 	for x in range(numBoards):
-		boardButtons[x].move(posList[x][0],posList[x][1])
+		buttons[x].move(posList[x][0],posList[x][1])
 
 
-
-createBoardButtons()
-positionBoardButtons()
-
+window = startBoardWindow()
 window.show()
+
 app.exec()
