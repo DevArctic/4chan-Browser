@@ -1,67 +1,62 @@
 import requests
 from PyQt5.QtWidgets import *
 
-URL = "https://a.4cdn.org/boards.json"
-r = requests.get(url=URL)
-boardData = r.json()
+class WindowManager():
+	def __init__(self):
+		self.currentWindow = []
+		self.previousWindow = []
 
-app= QApplication([])
+	
 
-BUTTON_WIDTH = 100
-BUTTON_HEIGHT = 50
-numBoards = len(boardData["boards"])
+class BoardsWindow(QWidget):
 
-class BoardWindow(QWidget):
+	def start(self):
+		r = requests.get(url="https://a.4cdn.org/boards.json")
+		self.data = r.json()
+		self.boardStringList = []
+		self.BUTTONH = 50
+		self.BUTTONW = 100
+		self.boardNum = len(self.data["boards"])
+		for x in range(self.boardNum):
+			self.boardStringList.append(self.data["boards"][x]["board"])
+		self.createButtons()
+		self.positionButtons()
 
-	def setButtons(self, buttons):
-		self.buttons = buttons
+	def positionButtons(self):
+		tWidth = self.frameGeometry().width()
+		col = tWidth // self.BUTTONW
+		paddingTotal = tWidth % self.BUTTONW
+		paddingLeft = paddingTotal // 2
+		paddingTop = 25
+		if (self.boardNum % col == 0):
+			rows = self.boardNum // col
+		else:
+			rows = (self.boardNum // col) + 1
+		posList = []
+		for y in range(rows):
+			for x in range(col):
+				posList.append((((self.BUTTONW * x) + paddingLeft),((self.BUTTONH * y) + paddingTop)))
+		for x in range(self.boardNum):
+			self.buttons[x].move(posList[x][0],posList[x][1])
+
+
+	def createButtons(self):
+		self.buttons = []
+		for each in self.boardStringList:
+			self.buttons.append(QPushButton(each))
+		for each in self.buttons:
+			each.resize(self.BUTTONW,self.BUTTONH)
+			each.setParent(self)
+			each.clicked.connect(lambda state, each=each: self.buttonClick(each))
 
 	def resizeEvent(self, e):
-		positionBoardButtons(self.buttons, self)
+		self.positionButtons()		
 
-def buttonClick(stuff):
-	print (stuff.text())	
+	def buttonClick(self, buttonClicked):
+		print (buttonClicked.text())
 
-def startBoardWindow():
-
-	window = BoardWindow()
-	boardStringList = []
-	for x in range(numBoards):
-		boardStringList.append(boardData["boards"][x]["board"])
-	window.setButtons(createBoardButtons(boardStringList, window))
-	positionBoardButtons(window.buttons, window)
-	return window
-
-def createBoardButtons(boardStringList, window):
-	boardButtons = []
-	for each in boardStringList:
-		boardButtons.append(QPushButton(each))
-	for each in boardButtons:
-		each.resize(BUTTON_WIDTH,BUTTON_HEIGHT)
-		each.setParent(window)
-		each.clicked.connect(lambda state, each=each: buttonClick(each))
-	return boardButtons
-
-def positionBoardButtons(buttons, window):
-	wWidth = window.frameGeometry().width()
-	print (wWidth)
-	col = wWidth // BUTTON_WIDTH
-	paddingTotal = wWidth % BUTTON_WIDTH
-	paddingLeft = paddingTotal // 2
-	paddingTop = 25
-	if (numBoards % col == 0):
-		rows = numBoards // col
-	else:
-		rows = (numBoards // col) + 1
-	posList = []
-	for y in range(rows):
-		for x in range(col):
-			posList.append((((BUTTON_WIDTH * x) + paddingLeft),((BUTTON_HEIGHT * y) + paddingTop)))
-	for x in range(numBoards):
-		buttons[x].move(posList[x][0],posList[x][1])
-
-
-window = startBoardWindow()
+app = QApplication([])
+window = BoardsWindow()
+window.start()
 window.show()
-
 app.exec()
